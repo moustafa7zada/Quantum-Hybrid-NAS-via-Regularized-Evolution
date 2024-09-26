@@ -23,7 +23,7 @@ def make_env(gym_id, seed, idx, capture_video, run_name):
 
     return thunk
 #100 - 128 - 8
-def Train_and_Evaluate_fn(DNA , number_of_updates = 3 ,  number_of_steps = 128 , number_of_environments = 8 ,  learning_rate = 2.5e-4 ,
+def Train_and_Evaluate_fn(DNA , number_of_updates = 100 ,  number_of_steps = 128 , number_of_environments = 8 ,  learning_rate = 2.5e-4 ,
                        device = 'cuda' , annealing = True , gae = True , number_of_epoches = 4 , gamma = 0.99 ,gae_lambda=0.98 ,
                          clipping_coeff = 0.2,value_clipping = True , gym_id ="LunarLander-v2" , seed = 1  , capture_video = False
                        , max_grad_norm = 0.5 , value_coeff = 0.5 , entro_coeff = 0.01 , norm_adv = True

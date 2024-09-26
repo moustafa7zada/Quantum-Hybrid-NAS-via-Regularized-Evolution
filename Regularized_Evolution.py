@@ -92,7 +92,7 @@ def Regularized_Evolution(cycles , population_size, sample_size ):
 
 start = time.time()
 #1000 - 32 - 8 
-ar , ac , hc= Regularized_Evolution( 15 , 10 ,  8 )
+ar , ac , hc= Regularized_Evolution( 1000 , 32 ,  8 )
 
 print("how much time did the training take in minutes" , (time.time() - start)/60 )
 print("the highest model arch" , ar)

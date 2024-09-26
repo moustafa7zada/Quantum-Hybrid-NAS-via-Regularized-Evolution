@@ -212,7 +212,7 @@ class Agent_From_DNA(nn.Module):
                         
                     if kind_of_measurments_actor[f"kind_for_actor{layer_count}"] == 'Expval':
                         if layer_count == self.number_of_layers :
-                            return qml.probs(wires=[wire for wire in range(num_qubits_actor[f"num_for_{layer_count}"])])
+                            return qml.probs(wires=[wire for wire in range(2)])
                         else : 
                            # print("layer_count " , layer_count ,"num of layer  " , self.number_of_layers  )
                             return [qml.expval(qml.Z(qubit)) for qubit in range( number_of_measurments_actor[f"meas_for_actor_{layer_count}"])] 
@@ -258,6 +258,7 @@ class Agent_From_DNA(nn.Module):
     def get_action_and_value(self, observation , action = None ):
         logits = self.Actor(observation) 
         probs = Categorical(logits= logits)
+        print(f"logits are {logits.shape} ")
         if action == None : 
             action = probs.sample()
         return action , probs.log_prob(action) , probs.entropy() , self.Critic(observation)
