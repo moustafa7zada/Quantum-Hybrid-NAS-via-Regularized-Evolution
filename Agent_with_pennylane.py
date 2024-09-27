@@ -240,7 +240,6 @@ class Agent_From_DNA(nn.Module):
 
                 i += 3                
         
-        
         if DNA[len(DNA) - 3 ] == 'C' : 
             self.Critic[-2]  = Layer_Ortho_inti(nn.Linear(self.Actor[-2].in_features, 1))
             self.Actor[ -2]  = Layer_Ortho_inti(nn.Linear(self.Actor[-2].in_features, 4))
@@ -258,7 +257,6 @@ class Agent_From_DNA(nn.Module):
     def get_action_and_value(self, observation , action = None ):
         logits = self.Actor(observation) 
         probs = Categorical(logits= logits)
-        print(f"logits are {logits.shape} ")
         if action == None : 
             action = probs.sample()
         return action , probs.log_prob(action) , probs.entropy() , self.Critic(observation)

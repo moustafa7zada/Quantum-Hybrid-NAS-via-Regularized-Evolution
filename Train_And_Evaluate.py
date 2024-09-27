@@ -6,9 +6,6 @@ import time
 import numpy as np
 import gym
 import random
-#import torchinfo
-#from ppo import Agent
-
 
 def make_env(gym_id, seed, idx, capture_video, run_name):
     def thunk():
@@ -99,7 +96,6 @@ def Train_and_Evaluate_fn(DNA , number_of_updates = 100 ,  number_of_steps = 128
                 values[step] = value.flatten()
             actions[step] = action
             logprobs[step] = logprob
-
             next_obs, reward, done, info , _ = envs.step(action.cpu().numpy()) #openai gym works only with numpy so you pass the action as a numpy array on cpu and the reward is an array so we transform it into a tensor
             rewards[step] = torch.tensor(reward).to(device).view(-1) #everything we got from the envirmonemt is as arrays so we have to transfer them into
             next_obs = torch.Tensor(next_obs).to(device)  # we dont put them in the array because we do that in the beginign of the for loop

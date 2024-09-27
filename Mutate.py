@@ -148,8 +148,7 @@ def Mutate(DNA , max_layers = 10 ,max_neurons_per_layer = 64 , max_qubits_per_ci
             
             
     while True : 
-        #random_mutation = choice(possible_mutations)
-        random_mutation = 'identity'
+        random_mutation = choice(possible_mutations)
         if random_mutation == 'add a classical layer' :
             if number_of_layers >= max_layers : 
                 continue
@@ -525,13 +524,6 @@ def Mutate(DNA , max_layers = 10 ,max_neurons_per_layer = 64 , max_qubits_per_ci
           
     
         elif random_mutation == 'identity' : 
-            print("i am here " , DNA )
             return DNA , random_mutation
-    
-    
-    # if DNA[-4] == 'Q' and DNA[-3] == 1 : 
-    #     print("last layer")
-    #     DNA[-3] = 2  
-        
-     
+
     return DNA , random_mutation
