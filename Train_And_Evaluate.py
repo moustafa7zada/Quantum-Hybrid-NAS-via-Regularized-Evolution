@@ -64,8 +64,7 @@ def Train_and_Evaluate_fn(DNA , number_of_updates =100,  number_of_steps = 64 , 
     agent = Agent_From_DNA(DNA)
 
     optimizer = optim.Adam(agent.parameters()  , lr = learning_rate , eps = 1e-5)
-    for name, param in agent.named_parameters():
-        print(name, param.requires_grad)
+
 
     #return 0 
     obs = torch.zeros((number_of_steps, number_of_environments) + envs.single_observation_space.shape).to(device)
@@ -153,11 +152,8 @@ def Train_and_Evaluate_fn(DNA , number_of_updates =100,  number_of_steps = 64 , 
                 end = start +  minibatch_size
                 mb_inds = b_inds[start:end]
 
-                print(b_actions.shape)
-                print(mb_inds.shape)
-
                 _ , newlogprob , entropy , newvalue =  agent.get_action_and_value(b_obs[mb_inds].to(device), b_actions.long()[mb_inds])
-                print(f"\n  {entropy.shape} {entropy} \n" )
+
                 logratio = newlogprob - b_logprobs[mb_inds]
                 ratio = logratio.exp()
 
@@ -197,28 +193,13 @@ def Train_and_Evaluate_fn(DNA , number_of_updates =100,  number_of_steps = 64 , 
                 #entropy loss
                 entropy_loss = entropy.mean()
                 
-                #the total loss
-                print("atttttneto ee ," , entropy_loss.shape , policy_loss.shape )
-                
+                #the total loss   
                 total_loss = policy_loss - (entro_coeff * entropy_loss) + (value_coeff * v_loss)
-                print("total" ,total_loss.shape )
-                print(f"policy_loss: {policy_loss.item()}, v_loss: {v_loss.item()}, entropy_loss: {entropy_loss.item()}")
-
-                for name, param in agent.named_parameters():
-                    if param.grad is not None:
-                        print(f"{name}: {param.grad}")
-                    else:
-                        print(f"{name} has no gradient")
 
 
 
                 optimizer.zero_grad()
                 total_loss.backward()
-                for name, param in agent.named_parameters():
-                    if param.grad is not None:
-                        print(f"{name}: {param.grad}")
-                    else:
-                        print(f"{name} has no gradient")
                     
                 torch.nn.utils.clip_grad_norm_(agent.parameters() , max_grad_norm)
                 optimizer.step()
