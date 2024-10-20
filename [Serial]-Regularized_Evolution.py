@@ -33,7 +33,7 @@ def Regularized_Evolution(cycles , population_size, sample_size ):
         while len(history) < population_size : 
             Random_model = Model()
             Random_model.arch  = Random_arch()
-            check_DNA(Random_model.arch)        
+            print(f"ur model {Random_model.arch}")
             progress_bar.update(1)
 
             Random_model.avg_reward  , Random_model.highest_reward , Random_model.episodes_rewards= Train_and_Evaluate_fn(Random_model.arch)

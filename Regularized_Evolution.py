@@ -2,7 +2,7 @@ import random
 import collections
 from Train_And_Evaluate import Train_and_Evaluate_fn
 from RandomArchitecture import Random_arch
-from  Mutate import Mutate , check_DNA
+from  Mutate import Mutate 
 from tqdm import tqdm
 import time 
 import torch.multiprocessing as mp
@@ -21,7 +21,6 @@ class Model() :
 def wrapper(shared_list) : 
     Random_model = Model()
     Random_model.arch  =Random_arch()
-    check_DNA(Random_model.arch)    
     print(f"the model {Random_model.arch}")
     re , fe , se  = Train_and_Evaluate_fn(Random_model.arch) 
     Random_model.avg_reward  = re
@@ -60,7 +59,7 @@ def worker_fn(shared_deque , population , sample_size):
     shared_deque.put_nowait((child , mutation))
 
     
-def Regularized_Evolution(cycles , population_size, sample_size , number_of_processes = 4):
+def Regularized_Evolution(cycles , population_size, sample_size , number_of_processes = 2):
     population = collections.deque()
     history = []
     writer = SummaryWriter('Regularized_Evolution_Lunar/')

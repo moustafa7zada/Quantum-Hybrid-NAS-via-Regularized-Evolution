@@ -34,7 +34,7 @@ def Random_arch(maximum_layers = 10 , min_qubtis = 2 , min_neurons = 2 , max_qub
             Rand_DNA.append('Q')
             if last_used_layer == 'Q' : 
                 if layer == how_many_layers-1 : 
-                    qubit_count = 2
+                    qubit_count = min_qubtis
                 else:
                     temp = [ k for k in range(min_qubtis , int(log2(last_used_output))+1)]
                     temp.append(min(max_qubtis,last_used_output))
@@ -62,6 +62,9 @@ def Random_arch(maximum_layers = 10 , min_qubtis = 2 , min_neurons = 2 , max_qub
             Rand_DNA.append(last_used_output)
             Rand_DNA.append(choice(['R','T']))
             last_used_layer = 'C'
+    
+    if Rand_DNA[-1] in ['R' , 'T'] : 
+        Rand_DNA.pop()
     return Rand_DNA
 
 

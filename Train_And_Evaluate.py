@@ -20,9 +20,9 @@ def make_env(gym_id, seed, idx, capture_video, run_name):
 
     return thunk
 #100 - 128 - 8
-def Train_and_Evaluate_fn(DNA , number_of_updates = 100 ,  number_of_steps = 128 , number_of_environments = 8 ,  learning_rate = 2.5e-4 ,
+def Train_and_Evaluate_fn(DNA , number_of_updates =100,  number_of_steps = 64 , number_of_environments = 8 ,  learning_rate = 2.5e-4 ,
                        device = 'cuda' , annealing = True , gae = True , number_of_epoches = 4 , gamma = 0.99 ,gae_lambda=0.98 ,
-                         clipping_coeff = 0.2,value_clipping = True , gym_id ="LunarLander-v2" , seed = 1  , capture_video = False
+                         clipping_coeff = 0.2,value_clipping = True , gym_id ="CartPole-v1" , seed = 1  , capture_video = False
                        , max_grad_norm = 0.5 , value_coeff = 0.5 , entro_coeff = 0.01 , norm_adv = True
                        ) :
 
@@ -36,13 +36,13 @@ def Train_and_Evaluate_fn(DNA , number_of_updates = 100 ,  number_of_steps = 128
 
     ########################### GPUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU ###############################
 
-    torch.backends.cudnn.deterministic = True
+    #torch.backends.cudnn.deterministic = True
     #########
     # batch size = steps * env 
     #min batch size = batch size / epochs 
-    batch_size = 8*128
-    minibatch_size = 2*128
-    agent = Agent_From_DNA(DNA)
+    batch_size = number_of_steps * number_of_environments
+    minibatch_size = batch_size //  number_of_epoches
+
     
     global_step_count = 0
     start_time = time.time()
@@ -59,21 +59,25 @@ def Train_and_Evaluate_fn(DNA , number_of_updates = 100 ,  number_of_steps = 128
     envs = gym.vector.SyncVectorEnv(
         [make_env(gym_id , seed + i, i, capture_video, run_name) for i in range(number_of_environments)]
     )
+    
+    
+    agent = Agent_From_DNA(DNA)
 
     optimizer = optim.Adam(agent.parameters()  , lr = learning_rate , eps = 1e-5)
+    for name, param in agent.named_parameters():
+        print(name, param.requires_grad)
 
+    #return 0 
     obs = torch.zeros((number_of_steps, number_of_environments) + envs.single_observation_space.shape).to(device)
     actions = torch.zeros((number_of_steps, number_of_environments) + envs.single_action_space.shape).to(device)
     logprobs = torch.zeros((number_of_steps, number_of_environments)).to(device)
     rewards = torch.zeros((number_of_steps, number_of_environments)).to(device)
     dones= torch.zeros((number_of_steps, number_of_environments)).to(device)
-    #truncates = torch.zeros((number_of_steps, number_of_environments)).to(device)
     values = torch.zeros((number_of_steps, number_of_environments)).to(device)
 
 
     next_obs = torch.tensor(envs.reset()[0]).to(device) # these are the initial observation and done(now called terminated and truncated) , we called it next since after each iteration the new obs will be used in the begining of the new step
     next_done = torch.zeros(number_of_environments).to(device)
-    #next_truncated = torch.zeros(number_of_environments).to(device)
 
     default_time = time.time()
     for update in range(1 , number_of_updates + 1 ):
@@ -100,24 +104,6 @@ def Train_and_Evaluate_fn(DNA , number_of_updates = 100 ,  number_of_steps = 128
             rewards[step] = torch.tensor(reward).to(device).view(-1) #everything we got from the envirmonemt is as arrays so we have to transfer them into
             next_obs = torch.Tensor(next_obs).to(device)  # we dont put them in the array because we do that in the beginign of the for loop
             next_done = torch.Tensor(done).to(device)
-            #next_truncated = torch.tensor(next_done).to(device)
-
-            # for i in range(number_of_environments):
-            #     if next_truncated[i] :
-            #         next_[i] = 1.0
-            #     else :
-            #         next_truncated[i] = 0.0
-
-            #     if next_terminated[i] :
-            #         next_terminated[i] = 1.0
-            #     else :
-            #         next_terminated[i] = 0.0
-
-            #here add the writer.add_scalar for depugging stuff
-
-
-
-
 
         with torch.no_grad():
             next_value = agent.get_value(next_obs).reshape(1,-1)
@@ -167,8 +153,11 @@ def Train_and_Evaluate_fn(DNA , number_of_updates = 100 ,  number_of_steps = 128
                 end = start +  minibatch_size
                 mb_inds = b_inds[start:end]
 
+                print(b_actions.shape)
+                print(mb_inds.shape)
 
                 _ , newlogprob , entropy , newvalue =  agent.get_action_and_value(b_obs[mb_inds].to(device), b_actions.long()[mb_inds])
+                print(f"\n  {entropy.shape} {entropy} \n" )
                 logratio = newlogprob - b_logprobs[mb_inds]
                 ratio = logratio.exp()
 
@@ -207,13 +196,30 @@ def Train_and_Evaluate_fn(DNA , number_of_updates = 100 ,  number_of_steps = 128
 
                 #entropy loss
                 entropy_loss = entropy.mean()
-
+                
                 #the total loss
+                print("atttttneto ee ," , entropy_loss.shape , policy_loss.shape )
+                
                 total_loss = policy_loss - (entro_coeff * entropy_loss) + (value_coeff * v_loss)
+                print("total" ,total_loss.shape )
+                print(f"policy_loss: {policy_loss.item()}, v_loss: {v_loss.item()}, entropy_loss: {entropy_loss.item()}")
+
+                for name, param in agent.named_parameters():
+                    if param.grad is not None:
+                        print(f"{name}: {param.grad}")
+                    else:
+                        print(f"{name} has no gradient")
+
 
 
                 optimizer.zero_grad()
                 total_loss.backward()
+                for name, param in agent.named_parameters():
+                    if param.grad is not None:
+                        print(f"{name}: {param.grad}")
+                    else:
+                        print(f"{name} has no gradient")
+                    
                 torch.nn.utils.clip_grad_norm_(agent.parameters() , max_grad_norm)
                 optimizer.step()
 

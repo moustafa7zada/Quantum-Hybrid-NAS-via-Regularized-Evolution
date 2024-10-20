@@ -15,7 +15,7 @@ def Layer_Ortho_inti(layer , std = np.sqrt(2) , bias = 0.0):
     
 class Agent_From_DNA(nn.Module): 
     
-    def __init__(self  ,DNA , the_input_of_theFIERSTlayer = 8 ) : 
+    def __init__(self  ,DNA , the_input_of_theFIERSTlayer = 4  , simulator = 'default.qubit') : 
         super(Agent_From_DNA, self).__init__()
         self.Critic = nn.Sequential()
         self.number_of_measurments_critic = 0 
@@ -128,7 +128,7 @@ class Agent_From_DNA(nn.Module):
                 weight_shapes_critic[f"weights_for_{layer_count}"] = weight_shapes
                 Circuits_critic[f"circuit_for_{layer_count}"] = Circuit
                 
-                device_critic[f"device_for_{layer_count}"]  = qml.device('default.qubit' , num_qubits_critic[f"num_for_{layer_count}"]) 
+                device_critic[f"device_for_{layer_count}"]  = qml.device(simulator , num_qubits_critic[f"num_for_{layer_count}"]) 
 
                 qnode_critic[f"qnode_for_{layer_count}"] = qml.QNode(Circuits_critic[f"circuit_for_{layer_count}"] , device =device_critic[f"device_for_{layer_count}"] , interface = 'torch')
                 qlayer_critic[f"{layer_count}"] = qml.qnn.TorchLayer(qnode_critic[f"qnode_for_{layer_count}"], weight_shapes_critic[f"weights_for_{layer_count}"]) 
@@ -197,7 +197,7 @@ class Agent_From_DNA(nn.Module):
                     
                 else : #the last layer , its a quantum layer 
                     kind_of_measurments_actor[f"kind_for_actor{layer_count}"]  = 'Expval'
-                    number_of_measurments_actor[f"meas_for_actor_{layer_count}"]= 4
+                    number_of_measurments_actor[f"meas_for_actor_{layer_count}"]= 2
                                 
                 def Circuit(inputs , weights):
                     self.internal_layer_index_actor =(self.internal_layer_index_actor+ 1) % self.counts  
@@ -211,11 +211,7 @@ class Agent_From_DNA(nn.Module):
                         qml.templates.StronglyEntanglingLayers(weights, wires=range(num_qubits_actor[f"num_for_{layer_count}"]))
                         
                     if kind_of_measurments_actor[f"kind_for_actor{layer_count}"] == 'Expval':
-                        if layer_count == self.number_of_layers :
-                            return qml.probs(wires=[wire for wire in range(2)])
-                        else : 
-                           # print("layer_count " , layer_count ,"num of layer  " , self.number_of_layers  )
-                            return [qml.expval(qml.Z(qubit)) for qubit in range( number_of_measurments_actor[f"meas_for_actor_{layer_count}"])] 
+                        return [qml.expval(qml.Z(qubit)) for qubit in range( number_of_measurments_actor[f"meas_for_actor_{layer_count}"])] 
                     else : 
                        # print("iam heeeeeeere " , num_qubits_actor[f"num_for_{layer_count}"] , layer_count , num_qubits_actor)
                         return qml.probs(wires=[wire for wire in range(num_qubits_actor[f"num_for_{layer_count}"])])
@@ -231,7 +227,7 @@ class Agent_From_DNA(nn.Module):
                 weight_shapes_actor[f"weights_for_{layer_count}"] = weight_shapes
                 Circuits_actor[f"circuit_for_{layer_count}"] = Circuit
                 
-                device_actor[f"device_for_{layer_count}"]  = qml.device('default.qubit' , num_qubits_actor[f"num_for_{layer_count}"]) 
+                device_actor[f"device_for_{layer_count}"]  = qml.device(simulator , num_qubits_actor[f"num_for_{layer_count}"]) 
 
                 qnode_actor[f"qnode_for_{layer_count}"] = qml.QNode(Circuits_actor[f"circuit_for_{layer_count}"] , device =device_actor[f"device_for_{layer_count}"] , interface = 'torch')
                 qlayer_actor[f"{layer_count}"] = qml.qnn.TorchLayer(qnode_actor[f"qnode_for_{layer_count}"], weight_shapes_actor[f"weights_for_{layer_count}"]) 
@@ -239,10 +235,9 @@ class Agent_From_DNA(nn.Module):
                 self.Actor.add_module( f"Quantum layer {layer_count} -- meas {number_of_measurments_actor}" , qlayer_actor[f"{layer_count}"])
 
                 i += 3                
-        
-        if DNA[len(DNA) - 3 ] == 'C' : 
-            self.Critic[-2]  = Layer_Ortho_inti(nn.Linear(self.Actor[-2].in_features, 1))
-            self.Actor[ -2]  = Layer_Ortho_inti(nn.Linear(self.Actor[-2].in_features, 4))
+        if DNA[len(DNA) - 2 ] == 'C' : 
+            self.Critic[-1]  = Layer_Ortho_inti(nn.Linear(self.Critic[-1].in_features, 1))
+            self.Actor[ -1]  = Layer_Ortho_inti(nn.Linear(self.Actor[-1].in_features, 2))
 
             
         self.to('cuda')
@@ -255,6 +250,7 @@ class Agent_From_DNA(nn.Module):
         return probs.sample()
 
     def get_action_and_value(self, observation , action = None ):
+        #print(f'The obs {observation}')
         logits = self.Actor(observation) 
         probs = Categorical(logits= logits)
         if action == None : 

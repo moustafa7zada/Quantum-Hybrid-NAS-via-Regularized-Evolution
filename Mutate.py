@@ -509,7 +509,7 @@ def Mutate(DNA , max_layers = 10 ,max_neurons_per_layer = 64 , max_qubits_per_ci
         elif random_mutation == 'change the activation fucntion of a layer':
             if num_of_classical != 0 :
                 try : 
-                    temp = index_of_classical[randint(1, num_of_classical)]
+                    temp = index_of_classical[randint(1, num_of_classical-1)]
                 except : 
                     temp  = index_of_classical[1] 
             else : 
