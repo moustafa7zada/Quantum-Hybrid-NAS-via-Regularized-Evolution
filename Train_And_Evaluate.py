@@ -64,8 +64,11 @@ def Train_and_Evaluate_fn(DNA , number_of_updates =100,  number_of_steps = 64 , 
     agent = Agent_From_DNA(DNA)
 
     optimizer = optim.Adam(agent.parameters()  , lr = learning_rate , eps = 1e-5)
-
-
+    # for name, param in agent.named_parameters():
+    #     if param.grad is not None:
+    #         print(f"{name}: { param } {param.grad}")
+    #     else:
+    #         print(f"{name} has no gradient")
     #return 0 
     obs = torch.zeros((number_of_steps, number_of_environments) + envs.single_observation_space.shape).to(device)
     actions = torch.zeros((number_of_steps, number_of_environments) + envs.single_action_space.shape).to(device)
@@ -96,9 +99,11 @@ def Train_and_Evaluate_fn(DNA , number_of_updates =100,  number_of_steps = 64 , 
 
             with torch.no_grad() :
                 action , logprob ,  _ , value = agent.get_action_and_value(next_obs)
+
                 values[step] = value.flatten()
             actions[step] = action
             logprobs[step] = logprob
+            #print("what is wrong" , action.cpu().numpy() )
             next_obs, reward, done, info , _ = envs.step(action.cpu().numpy()) #openai gym works only with numpy so you pass the action as a numpy array on cpu and the reward is an array so we transform it into a tensor
             rewards[step] = torch.tensor(reward).to(device).view(-1) #everything we got from the envirmonemt is as arrays so we have to transfer them into
             next_obs = torch.Tensor(next_obs).to(device)  # we dont put them in the array because we do that in the beginign of the for loop
@@ -130,7 +135,7 @@ def Train_and_Evaluate_fn(DNA , number_of_updates =100,  number_of_steps = 64 , 
                     else :
                         next_not_terminal = 1 - dones[t+1]
                         next_return = returns[t+1]
-                        returns[t] = rewards[t] + gamma * next_not_terminal * next_return
+                    returns[t] = rewards[t] + gamma * next_not_terminal * next_return
                     advantages = returns - values
 
 
@@ -151,9 +156,12 @@ def Train_and_Evaluate_fn(DNA , number_of_updates =100,  number_of_steps = 64 , 
             for start in range(0,batch_size , minibatch_size):
                 end = start +  minibatch_size
                 mb_inds = b_inds[start:end]
-
+                
+                
+                
                 _ , newlogprob , entropy , newvalue =  agent.get_action_and_value(b_obs[mb_inds].to(device), b_actions.long()[mb_inds])
-
+                #print("STROP RIGHT HERE " , newvalue , newlogprob) 
+                #return 0 
                 logratio = newlogprob - b_logprobs[mb_inds]
                 ratio = logratio.exp()
 
@@ -176,31 +184,36 @@ def Train_and_Evaluate_fn(DNA , number_of_updates =100,  number_of_steps = 64 , 
 
 
                 #the_value_loss
-                newvalue = newvalue.view(-1)#the value that you got from the new model
-                if value_clipping :
+                newvalue = newvalue.view(-1)
+                if value_clipping:
                     v_loss_unclipped = (newvalue - b_returns[mb_inds])**2
                     v_clipped = b_values[mb_inds] + torch.clip(
-                            newvalue - b_returns[mb_inds]
-                            , -clipping_coeff
-                            ,clipping_coeff)
+                            newvalue - b_values[mb_inds],  # Fixed this line
+                            -clipping_coeff,
+                            clipping_coeff)
                     v_loss_clipped = (v_clipped - b_returns[mb_inds])**2
-                    v_loss_max = torch.max(v_loss_clipped , v_loss_unclipped)
-                    v_loss =0.5 * v_loss_max.mean()
-                else :
-                    v_loss = 0.5 *((newvalue - b_returns[mb_inds])**2).mean()
-
+                    v_loss_max = torch.max(v_loss_clipped, v_loss_unclipped)
+                    v_loss = 0.5 * v_loss_max.mean()
+                
 
                 #entropy loss
                 entropy_loss = entropy.mean()
                 
-                #the total loss   
-                total_loss = policy_loss - (entro_coeff * entropy_loss) + (value_coeff * v_loss)
+                #the total loss                
+                total_loss = policy_loss - (entro_coeff * entropy_loss) + (value_coeff * v_loss)  # Matched order
+                print(f"policy_loss: {policy_loss.item()}, v_loss: {v_loss.item()}, entropy_loss: {entropy_loss.item()}")
+
 
 
 
                 optimizer.zero_grad()
                 total_loss.backward()
-                    
+                # for name, param in agent.named_parameters():
+                #     if param.grad is not None:
+                #         print(f"{name}: { param } {param.grad}")
+                #     else:
+                #         print(f"{name} has no gradient")
+                #return 0 
                 torch.nn.utils.clip_grad_norm_(agent.parameters() , max_grad_norm)
                 optimizer.step()
 
@@ -219,6 +232,7 @@ def Train_and_Evaluate_fn(DNA , number_of_updates =100,  number_of_steps = 64 , 
         writer.add_scalar("losses/explained_variance", explained_var, global_step_count)
         writer.add_scalar("charts/SPS", int(global_step_count / (time.time() - start_time)), global_step_count)
         print("SPS:", int(global_step_count / (time.time() - start_time)))
+        #return 0 
 
     envs.close()
 

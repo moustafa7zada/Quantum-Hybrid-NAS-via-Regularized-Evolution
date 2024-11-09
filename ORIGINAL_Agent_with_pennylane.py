@@ -15,7 +15,7 @@ class MultLayer(nn.Module):
         return torch.mul(inputs , 10 )
 
 class My_quantum_layer(nn.Module): 
-    def __init__(self, qnode, weights_shape , measurment_shape  , kind_of_measurment , torch_device = 'cuda'): 
+    def __init__(self, qnode, weights_shape , measurment_shape  , kind_of_measurment , torch_device = 'cpu'): 
         super().__init__()
         self.weight = nn.Parameter(torch.randn(weights_shape['weights'])).to(torch_device)
         print("These are your shapes:", weights_shape)
@@ -54,7 +54,7 @@ def Layer_Ortho_inti(layer , std = np.sqrt(2) , bias = 0.0):
     
 class Agent_From_DNA(nn.Module): 
     
-    def __init__(self  ,DNA , the_input_of_theFIERSTlayer = 4  , simulator = 'default.qubit') : 
+    def __init__(self  ,DNA , the_input_of_theFIERSTlayer = 4  , simulator = 'lightning.qubit') : 
         super().__init__()
         self.Critic = nn.Sequential()
         self.number_of_measurments_critic = 0 
@@ -167,10 +167,10 @@ class Agent_From_DNA(nn.Module):
                 weight_shapes_critic[f"weights_for_{layer_count}"] = weight_shapes
                 Circuits_critic[f"circuit_for_{layer_count}"] = Circuit
                 
-                device_critic[f"device_for_{layer_count}"]  = qml.device(simulator , wires=num_qubits_critic[f"num_for_{layer_count}"]) 
+                device_critic[f"device_for_{layer_count}"]  = qml.device(simulator , num_qubits_critic[f"num_for_{layer_count}"]) 
 
                 qnode_critic[f"qnode_for_{layer_count}"] = qml.QNode(Circuits_critic[f"circuit_for_{layer_count}"] , device =device_critic[f"device_for_{layer_count}"] , interface = 'torch')
-                qlayer_critic[f"{layer_count}"] = qml.qnn.TorchLayer(qnode_critic[f"qnode_for_{layer_count}"], weight_shapes_critic[f"weights_for_{layer_count}"] ) 
+                qlayer_critic[f"{layer_count}"] = My_quantum_layer(qnode_critic[f"qnode_for_{layer_count}"], weight_shapes_critic[f"weights_for_{layer_count}"]  , number_of_measurments_critic[f"meas_for_critic_{layer_count}"] ,  kind_of_measurments_critic[f"kind_for_critic{layer_count}"]) 
 
                 self.Critic.add_module( f"quantum_layer_{layer_count}__meas_{number_of_measurments_critic}" , qlayer_critic[f"{layer_count}"]  )
 
@@ -241,7 +241,7 @@ class Agent_From_DNA(nn.Module):
                 def Circuit(inputs , weights):
                     self.internal_layer_index_actor =(self.internal_layer_index_actor+ 1) % self.counts  
                     layer_count = self.index_of_quantum[self.internal_layer_index_actor - 1 ]
-                    
+                    print("Input shape:", inputs.shape if hasattr(inputs, 'shape') else inputs)
                     qml.templates.AngleEmbedding(inputs, wires = range(num_qubits_actor[f"num_for_{layer_count}"]) )
             
                     if Entanglment_actro[f"ent_for_{layer_count}"] == 'L' : 
@@ -252,6 +252,7 @@ class Agent_From_DNA(nn.Module):
                     if kind_of_measurments_actor[f"kind_for_actor{layer_count}"] == 'Expval':
                         return [qml.expval(qml.Z(qubit)) for qubit in range( number_of_measurments_actor[f"meas_for_actor_{layer_count}"])] 
                     else : 
+                       # print("iam heeeeeeere " , num_qubits_actor[f"num_for_{layer_count}"] , layer_count , num_qubits_actor)
                         return qml.probs(wires=[wire for wire in range(num_qubits_actor[f"num_for_{layer_count}"])])
 
                 
@@ -265,10 +266,10 @@ class Agent_From_DNA(nn.Module):
                 weight_shapes_actor[f"weights_for_{layer_count}"] = weight_shapes
                 Circuits_actor[f"circuit_for_{layer_count}"] = Circuit
                 
-                device_actor[f"device_for_{layer_count}"]  = qml.device(simulator , wires = num_qubits_actor[f"num_for_{layer_count}"]) 
+                device_actor[f"device_for_{layer_count}"]  = qml.device(simulator , num_qubits_actor[f"num_for_{layer_count}"]) 
 
                 qnode_actor[f"qnode_for_{layer_count}"] = qml.QNode(Circuits_actor[f"circuit_for_{layer_count}"] , device =device_actor[f"device_for_{layer_count}"] , interface = 'torch')
-                qlayer_actor[f"{layer_count}"] = qml.qnn.TorchLayer(qnode_actor[f"qnode_for_{layer_count}"], weight_shapes_actor[f"weights_for_{layer_count}"] ) 
+                qlayer_actor[f"{layer_count}"] = My_quantum_layer(qnode_actor[f"qnode_for_{layer_count}"], weight_shapes_actor[f"weights_for_{layer_count}"] ,number_of_measurments_actor[f"meas_for_actor_{layer_count}"] ,   kind_of_measurments_actor[f"kind_for_actor{layer_count}"]) 
 
                 self.Actor.add_module( f"Quantum layer {layer_count} -- meas {number_of_measurments_actor}" , qlayer_actor[f"{layer_count}"])
 
@@ -279,7 +280,7 @@ class Agent_From_DNA(nn.Module):
         
         
         #self.Critic.add_module("leaky", MultLayer() ) 
-        self.to('cuda')
+        #self.to('cuda')
     def get_value(self,observation):    
         return self.Critic(observation)
     
