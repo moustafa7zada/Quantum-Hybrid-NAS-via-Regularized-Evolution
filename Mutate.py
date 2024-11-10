@@ -156,10 +156,10 @@ def Mutate(DNA , max_layers = 10 ,max_neurons_per_layer = 64 , max_qubits_per_ci
             where_to_add = randint(1, number_of_layers+1)
             the_layer_output = randint(min_neurons_per_layer,max_neurons_per_layer)
             activation = choice(['R' ,'T'])
-            if where_to_add == number_of_layers+1 :#if iam adding at the end  
+            if where_to_add == number_of_layers+1 :#if iam adding at the end
+                DNA.append(activation)
                 DNA.append('C')
-                DNA.append(the_output_of_the_lastLayer )
-                DNA.append( activation)
+                DNA.append(the_output_of_the_lastLayer)
                 break
             
             
