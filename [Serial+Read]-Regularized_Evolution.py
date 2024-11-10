@@ -9,7 +9,10 @@ from torch.utils.tensorboard import SummaryWriter
 import csv 
 import ast 
 import os 
+import wandb 
     
+
+
 class Model() :
     def __init__(self): 
         self.avg_reward = 0 
@@ -19,6 +22,14 @@ class Model() :
         
     
 def Regularized_Evolution(cycles , population_size, sample_size ):
+    wandb.init(project = "Serial QPPO , 10 Nov" ,  
+               config={
+        "learning_rate":2.5e-4,
+        "updates": 100,
+        "cycles" : cycles , 
+        "population_size" : population_size , 
+        "epochs": 4,
+        })
     population = collections.deque()
     history = []
     writer = SummaryWriter('Regularized_Evolution_Lunar/')
@@ -79,7 +90,7 @@ def Regularized_Evolution(cycles , population_size, sample_size ):
                 progress_bar.update(1)
                 
                 csv_write.writerow([string_DNA , child.avg_reward , child.highest_reward ,str(child.episodes_rewards) , mutation])
-            
+                wandb.log({"Model Arch" :string_DNA , "avg_reward": child.avg_reward , "max reward" : child.highest_reward })
     the_highest_model = Model()
     
     for i in history :    
