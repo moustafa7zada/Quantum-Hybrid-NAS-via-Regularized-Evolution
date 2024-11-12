@@ -4,9 +4,13 @@ import os
 
 def check_DNA(DNA) : 
     for i in range(len(DNA)): 
+        if DNA[i] == 'R' or DNA[i] == 'T' : 
+            assert DNA[i+1] != 'T'   
+            assert DNA[i+1] != 'R' 
         if DNA[i] == 'C':
             assert type(DNA[i+1]) == int , "your clasical layer's neuron count isnt correct"  
-            assert DNA[i+2] == 'R' or DNA[i+2] == 'T' , f"your classical layer's activation isnt correct here {DNA[0:i+3]}" 
+            if i+2 < len(DNA) : 
+                assert DNA[i+2] == 'R' or DNA[i+2] == 'T' , f"your classical layer's activation isnt correct here {DNA[0:i+3]}" 
         elif DNA[i] == 'Q' : 
             assert DNA[i+1] != 1 , "yooooooooooooooo one qubit here"
             assert type(DNA[i+1]) == int , "your Quantum layer's qubit count isnt correct"
@@ -19,7 +23,7 @@ possible_mutations = ['add a classical layer' , 'remove a classical layer' , 'al
  'change the repetitions of the ansatz' , 'change the entanglement type of the ansatz' , 
  'change the activation fucntion of a layer' , 'identity' ]
 
-def Mutate(DNA , max_layers = 10 ,max_neurons_per_layer = 64 , max_qubits_per_circuit = 10 ,  min_neurons_per_layer = 2 ,
+def Mutate(DNA ,  max_layers = 10 ,max_neurons_per_layer = 64 , max_qubits_per_circuit = 10 ,  min_neurons_per_layer = 2 ,
            min_qubits_per_layer = 2 ,  the_output_of_the_lastLayer = 2) : 
     '''for the unification of output shapes , max neuron per layer is 64 and max qubit per layer is 6 , which gives an output of 2^6 = 64
     note that 2**min_qubits_per_layer should be >= the output of the neural net (the action space) and min_neurons_per_layer should also be == the output (the action space) if its the final layer '''
@@ -109,7 +113,7 @@ def Mutate(DNA , max_layers = 10 ,max_neurons_per_layer = 64 , max_qubits_per_ci
     
     
     def insert_this_quantum(DNA ,where_to_add , the_layer_qubits , the_layer_entaglement , the_layer_reps):
-        try : 
+        try :
             DNA.insert(index_of_layer[where_to_add] , 'Q')
             DNA.insert(index_of_layer[where_to_add]+1 ,the_layer_qubits)
             DNA.insert(index_of_layer[where_to_add]+2 , the_layer_entaglement)
@@ -119,6 +123,7 @@ def Mutate(DNA , max_layers = 10 ,max_neurons_per_layer = 64 , max_qubits_per_ci
                 index_of_layer[k] += 4 
             
         except : 
+
             DNA.append('Q')
             DNA.append(the_layer_qubits)
             DNA.append(the_layer_entaglement)
@@ -149,6 +154,7 @@ def Mutate(DNA , max_layers = 10 ,max_neurons_per_layer = 64 , max_qubits_per_ci
             
     while True : 
         random_mutation = choice(possible_mutations)
+            
         if random_mutation == 'add a classical layer' :
             if number_of_layers >= max_layers : 
                 continue
@@ -156,10 +162,11 @@ def Mutate(DNA , max_layers = 10 ,max_neurons_per_layer = 64 , max_qubits_per_ci
             where_to_add = randint(1, number_of_layers+1)
             the_layer_output = randint(min_neurons_per_layer,max_neurons_per_layer)
             activation = choice(['R' ,'T'])
-            if where_to_add == number_of_layers+1 :#if iam adding at the end
-                DNA.append(activation)
+            if where_to_add == number_of_layers+1 :#if iam adding at the end  
+                if DNA[index_of_layer[where_to_add-1]] == 'C' : 
+                    DNA.append( activation)
                 DNA.append('C')
-                DNA.append(the_output_of_the_lastLayer)
+                DNA.append(the_output_of_the_lastLayer )
                 break
             
             
@@ -209,7 +216,11 @@ def Mutate(DNA , max_layers = 10 ,max_neurons_per_layer = 64 , max_qubits_per_ci
                 continue
             the_layer_to_remove = index_of_layer.index(index_of_classical[the_layer_to_remove])
             if the_layer_to_remove == number_of_layers : #the last layer 
-                pop_this_classical(DNA, index_of_layer, the_layer_to_remove)
+                if DNA[index_of_layer[the_layer_to_remove-1]] == 'C' : 
+                    DNA.pop()
+                DNA.pop()
+                DNA.pop()
+
                 break
             
             if DNA[index_of_layer[the_layer_to_remove-1]] == 'Q' and DNA[index_of_layer[the_layer_to_remove+1]] == 'Q' :#if its sandwiched between two quantum layers , dont do it 
@@ -263,6 +274,7 @@ def Mutate(DNA , max_layers = 10 ,max_neurons_per_layer = 64 , max_qubits_per_ci
                 
                 if DNA[index_of_layer[which_layer+1]] == 'Q' :#quantum layer after me 
                     if DNA[index_of_layer[which_layer+1]+1] < max_qubits_per_circuit :
+                        
                         how_much_to_add = randint(1, (max_qubits_per_circuit -  DNA[index_of_layer[which_layer+1]+1]))
                         DNA[index_of_layer[which_layer+1]+1] += how_much_to_add #add to the quantum layer 
                         DNA[index_of_layer[which_layer]+1] += how_much_to_add #add to the classical layer itself 
@@ -348,7 +360,6 @@ def Mutate(DNA , max_layers = 10 ,max_neurons_per_layer = 64 , max_qubits_per_ci
                 which_layer = randint(2, number_of_layers-1)
             except : 
                 continue
-            #print ('what did you remove ' , DNA[index_of_layer[which_layer]] , 'where ', which_layer)
             if DNA[index_of_layer[which_layer]] == 'C' : #only the output will be effected 
                 if DNA[index_of_layer[which_layer]+1] <= min_neurons_per_layer  or which_layer == number_of_layers:
                     continue
@@ -363,16 +374,13 @@ def Mutate(DNA , max_layers = 10 ,max_neurons_per_layer = 64 , max_qubits_per_ci
                 
                 
             else : # a quantum layer to edit 
-                #print("Before removing " , DNA[index_of_layer[which_layer]+1])
                 if DNA[index_of_layer[which_layer]+1] == min_qubits_per_layer : 
-                    #print('too small to remove from')
                     continue
                 try : 
                     how_much_to_remove = randint(1,(DNA[index_of_layer[which_layer]+1]  - min_qubits_per_layer))
                 except : 
                     continue
                 DNA[index_of_layer[which_layer]+1] -= how_much_to_remove
-                #print("After removing " , DNA[index_of_layer[which_layer]+1])
                 reduce_qubits_afterME(DNA , index_of_layer , which_layer)
                 reduce_qubits_beforeME(DNA , index_of_layer , which_layer)
                 break 
@@ -396,6 +404,7 @@ def Mutate(DNA , max_layers = 10 ,max_neurons_per_layer = 64 , max_qubits_per_ci
             if where_to_add == number_of_layers+1:
                 if DNA[index_of_layer[where_to_add-1]] == 'C' :
                     DNA[index_of_layer[where_to_add-1]+1] = the_layer_qubits
+                    DNA.append(choice(['R', 'T']) ) 
                     insert_this_quantum(DNA, where_to_add, the_layer_qubits , the_layer_entaglement, the_layer_reps)
                     break
                 else :
@@ -432,6 +441,7 @@ def Mutate(DNA , max_layers = 10 ,max_neurons_per_layer = 64 , max_qubits_per_ci
                 if  which_layer == number_of_layers :#if this is the last layer 
                     DNA[index_of_layer[which_layer-1]+1] =  the_output_of_the_lastLayer
                     pop_this_quantum(DNA, index_of_layer, which_layer)
+                    DNA.pop()
                     break
                 
                 #if its not the last layer , there is a classical layer before me and a quantum layer after me 
@@ -523,7 +533,7 @@ def Mutate(DNA , max_layers = 10 ,max_neurons_per_layer = 64 , max_qubits_per_ci
                 break
           
     
-        elif random_mutation == 'identity' : 
+        elif random_mutation == 'identity' :
             return DNA , random_mutation
 
     return DNA , random_mutation
