@@ -507,15 +507,12 @@ def Mutate(DNA ,  max_layers = 10 ,max_neurons_per_layer = 64 , max_qubits_per_c
             current_entang = DNA[index_of_quantum[which_layer]+2]
             
             if current_entang == 'L' : 
-                DNA[index_of_quantum[which_layer]+2] = choice(['O' , 'F'])
+                DNA[index_of_quantum[which_layer]+2] = 'F' 
                 break
-            elif current_entang == 'O' : 
-                DNA[index_of_quantum[which_layer]+2] = choice(['L' , 'F'])
+            elif current_entang == 'F' : 
+                DNA[index_of_quantum[which_layer]+2] = 'L'
                 break
-            else : 
-                DNA[index_of_quantum[which_layer]+2] = choice(['L' , 'O'])
-                break
-
+        
         elif random_mutation == 'change the activation fucntion of a layer':
             if num_of_classical != 0 :
                 try : 

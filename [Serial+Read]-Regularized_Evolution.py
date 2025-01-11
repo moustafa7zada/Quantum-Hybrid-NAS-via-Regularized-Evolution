@@ -34,7 +34,7 @@ def Regularized_Evolution(cycles , population_size, sample_size ):
     history = []
     writer = SummaryWriter('Regularized_Evolution_Lunar/')
     
-    filename = 'History-RUN-4.CSV'
+    filename = 'Results-updated-unsorted.CSV'
     progress_bar = tqdm(total=cycles + population_size + 3)
     with open(filename , mode  = 'r' ) as file : 
         reader = csv.reader(file)
@@ -102,7 +102,7 @@ def Regularized_Evolution(cycles , population_size, sample_size ):
 
 start = time.time()
 #1000 - 32 - 8 
-ar , ac , hc= Regularized_Evolution( 1000 , 32 ,  8 )
+ar , ac , hc= Regularized_Evolution( 1061 , 32 ,  8 )
 
 print("how much time did the training take in minutes" , (time.time() - start)/60 )
 print("the highest model arch" , ar)
