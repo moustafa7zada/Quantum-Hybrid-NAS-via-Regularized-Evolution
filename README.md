@@ -3,7 +3,7 @@ An implementation of Regularized Evolution, a Neural Architecture Search Algorit
 , trained using the Proximal Policy Optimization Algorithm in a Reinforcement Learning Environement.
 
 
-arxive: https://arxiv.org/abs/2501.10673
+arxiv: https://arxiv.org/abs/2501.10673
 
 
 
